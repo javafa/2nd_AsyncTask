@@ -76,6 +76,19 @@ public class MainActivity extends AppCompatActivity {
             super.onPreExecute();
             flag = true;
             progressBar.setProgress(0);
+
+            // 파일사이즈를 입력
+            AssetManager manager = getAssets();
+            try {
+                // 파일 사이즈를 가져오기 위해 파일 스트림 생성
+                InputStream is = manager.open("big.avi");
+                int fileSize = is.available(); // stream 에 연결된 파일사이즈를 리턴해준다
+                // 프로그래스바의 최대값에 파일사이즈 입력
+                progressBar.setMax(fileSize);
+                is.close();
+            }catch(Exception e){
+                e.printStackTrace();
+            }
         }
 
         // sub thread 에서 실행되는 함수
@@ -99,13 +112,16 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        int totalSize = 0;
         // main thread 에서 실행되는 함수
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            int sec = values[0];
-            result.setText(sec + " sec");
-            progressBar.setProgress(sec);
+            int size = values[0];
+            // 넘어온 파일길이를 totalsize 에 계속 더해준다
+            totalSize = totalSize + size;
+            result.setText(totalSize + " byte");
+            progressBar.setProgress(totalSize);
         }
 
         // assets 에 있는 파일을 쓰기가능한 internal Storage 로 복사한다
@@ -148,6 +164,8 @@ public class MainActivity extends AppCompatActivity {
 
                 while ((read = bis.read(buffer, 0, 1024)) != -1) {
                     bos.write(buffer, 0, read);
+                    // AsyncTask의 onProgressUpdate 함수에 읽은 길이값을 넘겨준다
+                    publishProgress(read);
                 }
 
                 // 남아있는 데이터를 다 흘려보낸다
